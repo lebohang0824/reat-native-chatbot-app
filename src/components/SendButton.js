@@ -5,7 +5,7 @@ import { GiftedChat, Send } from 'react-native-gifted-chat';
 // Components
 import MaterialIcon from 'react-native-vector-icons/MaterialCommunityIcons';
 
-export default class Toolbar extends Component {
+export default class SendButton extends Component {
 	render() {
 		return (
 			<Send 

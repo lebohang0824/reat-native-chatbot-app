@@ -1,94 +1,91 @@
-import React, { Component } from 'react';
+import React from 'react';
+import Storage from './services/Storage';
+import { Route } from './services/Router';
+import { View, StyleSheet, Alert } from 'react-native';
+import { Button, Input, Text } from 'react-native-elements';
+
+// Service
 import axios from 'axios';
-import { View, Text } from 'react-native';
-import { GiftedChat } from 'react-native-gifted-chat';
 
 // Components
-import Toolbar from './components/Toolbar';
-import SendButton from './components/SendButton';
+import { Color } from 'react-native-gifted-chat';
+import Icon from 'react-native-vector-icons/FontAwesome';
 
-export default class App extends Component {
+export default class App extends React.Component {
 
-	constructor(props) {
-		super(props);
-		this._onSend = this._onSend.bind(this);
-		this._onReply = this._onReply.bind(this);
-		this._isTyping = this._isTyping.bind(this);
-	}
+    state = { name: null }
 
-	state = {typing: false, messages: []}
+    _login() {
 
-	_botMessage(text, id) {
-		return [{
-			_id: id,
-			text: text,
-			createdAt: new Date(),
-			user: {
-				_id: 2,
-				name: 'React Native',
-				avatar: 'https://placeimg.com/140/140/avatar',
-			},
-		}]
-	}
+        // Check empty
+        if (!this.state.name || 0 === this.state.name.length) {
+            return Alert.alert('Enter your name','Name can not be empty');
+        }
 
-	_onReply(text, time) {
-		let id = this.state.messages.length + 1;
-		const stateMessages = this.state.messages;
-		
-		setTimeout(() => {
-			this.setState({ messages: GiftedChat.append(stateMessages, this._botMessage(text, id)) });
-		}, time)
-	}
+        this.setState({ active: true });
 
-	_onSend(messages) {
+        axios.post('https://wiki101.herokuapp.com/api/database',{ name: this.state.name })
+            .then(({data}) => {
+                this.setState({ active: false });
+                Storage.set('name', this.state.name).then(() => Route.set('Main'));
+            })
+        .catch(err => console.log(err));        
+    }
 
-		// Send message 
-		const text = messages[0].text;
-		const stateMessages = this._messages;
-		const send = GiftedChat.append(stateMessages, messages)
-		this._messages = send;
-
-		this.setState({ messages: send });
-		
-		axios.post('https://wiki101.herokuapp.com/api/message', {
-			session: this._session, 
-			message: text 
-		}).then(res => {
-			let replyTime = (100 * res.data.text.length);
-
-			this._onReply(res.data.text, replyTime);
-
-		}).catch(err => console.log(err));
-	}
-
-	_isTyping() {
-
-		console.log(state)
-		// if (state) return <Text>Typing</Text>
-		return null;
-	}
-
-	componentDidMount() {
-		axios.post('https://wiki101.herokuapp.com/api/session').then(res => {
-			// Session
-			this._session = res.data.session;
-			this._messages = this._botMessage('Hi', 1);
-
-			this.setState({ messages: this._botMessage('Hi', 1)})
-		}).catch(err => console.log(err));		
-	}
-
-	render() {
-		return (
-			<GiftedChat 
-				alwaysShowSend={true}
-				messages={this.state.messages} 
-				onSend={this._onSend}
-				renderFooter={this._isTyping(props)}
-				renderSend={props => <SendButton {...props} />}
-				renderInputToolbar={props => <Toolbar {...props} />}
-				user={{ _id: 1 }}
-			/>
-		);
-	}
+    render() {
+        return (
+            <View style={css.container}>
+                <View style={css.inputs}>
+                    <Input 
+                        placeholder="Enter your name"
+                        inputContainerStyle={css.input}
+                        leftIconContainerStyle={css.leftIcon} 
+                        onChangeText={name => this.setState({ name })}
+                        leftIcon={<Icon name="user-o" size={20} style={css.icon} />} 
+                    />
+                </View>
+                <View style={css.buttons}>
+                    <Button 
+                        title="Start Chat" 
+                        buttonStyle={css.button} 
+                        loading={this.state.active}
+                        onPress={this._login.bind(this)}
+                    />
+                </View>
+            </View>
+        );
+    }
 }
+
+App.options = {
+    topBar: { visible: false }
+}
+
+const css = StyleSheet.create({
+    container: {
+        flex: 1,
+        alignItems: 'center',
+        backgroundColor: '#FFF',
+        justifyContent: 'center'
+    },
+    text: {
+        paddingVertical: 20
+    },
+    inputs: {
+        width: '80%'
+    },
+    input: {
+        borderBottomColor: '#D0D0D0'
+    },
+    buttons: {
+        padding: 10,
+        width: '80%',
+        marginTop: 10,
+    },
+    button: {
+        backgroundColor: '#0084ff'
+    },
+    icon: {
+        width: 30
+    }
+});

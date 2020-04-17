@@ -1,5 +1,15 @@
-import {AppRegistry} from 'react-native';
-import Main from './src/Main';
-import {name as appName} from './app.json';
+import { Navigation } from 'react-native-navigation';
+import { Auth, Register } from './src/services/Router';
 
-AppRegistry.registerComponent(appName, () => Main);
+
+// Bootstrap app routes
+import App from './src/App';
+import Main from './src/Main';
+
+// Register
+Register.screen('App', App);
+Register.screen('Main', Main);
+
+Navigation.events().registerAppLaunchedListener(async () => {
+    Auth.check();
+});
